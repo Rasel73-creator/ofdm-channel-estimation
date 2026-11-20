@@ -32,3 +32,9 @@ def nmse_db(guesses, truth):
     mistake = np.sum(np.abs(guesses - truth) ** 2)
     size = np.sum(np.abs(truth) ** 2)
     return 10 * np.log10(mistake / size)
+
+# ---- The smart guess (LMMSE): blend all lanes using the moving-together table ----
+def lmmse_guess(observations, R, noise_var):
+    N = R.shape[0]
+    blended = np.linalg.solve(R + noise_var * np.eye(N), observations.T)
+    return (R @ blended).T
