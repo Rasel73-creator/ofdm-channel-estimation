@@ -47,3 +47,12 @@ def low_rank_guess(observations, R, noise_var, rank):
     U = vectors[:, keep]                             # their patterns
     trust = values / (values + noise_var)            # how much to trust each knob
     return np.array([U @ (trust * (U.conj().T @ z)) for z in observations])
+
+# ---- Learn the moving-together table from example measurements ----
+def learn_table(examples, noise_var=0.0):
+    S, N = examples.shape
+    R = examples.T @ examples.conj() / S            # average of z z^H over the examples
+    R = R - noise_var * np.eye(N)                   # take out the hiss's share (if any)
+    values, vectors = np.linalg.eigh(R)             # knob strengths can't be negative,
+    values = np.maximum(values, 0.0)                # so clip them at zero
+    return (vectors * values) @ vectors.conj().T
