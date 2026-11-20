@@ -56,3 +56,9 @@ def learn_table(examples, noise_var=0.0):
     values, vectors = np.linalg.eigh(R)             # knob strengths can't be negative,
     values = np.maximum(values, 0.0)                # so clip them at zero
     return (vectors * values) @ vectors.conj().T
+
+# ---- Shrink a learned table towards a plain "nothing moves together" table ----
+def shrink_table(R, alpha):
+    N = R.shape[0]
+    average = np.trace(R).real / N                  # average lane strength
+    return (1 - alpha) * R + alpha * average * np.eye(N)
