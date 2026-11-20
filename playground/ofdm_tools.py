@@ -38,3 +38,12 @@ def lmmse_guess(observations, R, noise_var):
     N = R.shape[0]
     blended = np.linalg.solve(R + noise_var * np.eye(N), observations.T)
     return (R @ blended).T
+
+# ---- The hidden-knobs guess (low rank): keep only the strongest knobs ----
+def low_rank_guess(observations, R, noise_var, rank):
+    values, vectors = np.linalg.eigh(R)              # find the knobs
+    keep = np.argsort(values)[::-1][:rank]           # pick the strongest `rank` knobs
+    values = np.maximum(values[keep], 0.0)
+    U = vectors[:, keep]                             # their patterns
+    trust = values / (values + noise_var)            # how much to trust each knob
+    return np.array([U @ (trust * (U.conj().T @ z)) for z in observations])
