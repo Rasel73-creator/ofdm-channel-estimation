@@ -62,3 +62,22 @@ def shrink_table(R, alpha):
     N = R.shape[0]
     average = np.trace(R).real / N                  # average lane strength
     return (1 - alpha) * R + alpha * average * np.eye(N)
+
+    # ---- A different room for stress tests: more echoes and/or slower fading ----
+def make_other_room(seed, count, noise_var, paths=12, decay=3.0):
+    rng = np.random.default_rng(seed)
+    delays = np.arange(paths) + 0.25
+    power = np.exp(-np.arange(paths) / decay)
+    power /= power.sum()
+    F = np.exp(-2j * np.pi * np.arange(64)[:, None] * delays[None, :] / 64)
+    truth = np.array([draw_channel(rng, F, power) for _ in range(count)])
+    noise = np.sqrt(noise_var / 2) * (rng.normal(size=truth.shape)
+                                      + 1j * rng.normal(size=truth.shape))
+    R_true = (F * power[None, :]) @ F.conj().T
+    return truth, truth + noise, R_true
+
+# ---- A robust table: assume only "every echo arrives within max_delay steps" ----
+def robust_table(max_delay=16, N=64):
+    delays = np.arange(0, max_delay, 0.05)           # lots of possible echo delays, evenly spread
+    F = np.exp(-2j * np.pi * np.arange(N)[:, None] * delays[None, :] / N)
+    return (F @ F.conj().T) / len(delays)            # every delay equally strong
