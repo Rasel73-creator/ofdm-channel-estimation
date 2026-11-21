@@ -81,3 +81,14 @@ def robust_table(max_delay=16, N=64):
     delays = np.arange(0, max_delay, 0.05)           # lots of possible echo delays, evenly spread
     F = np.exp(-2j * np.pi * np.arange(N)[:, None] * delays[None, :] / N)
     return (F @ F.conj().T) / len(delays)            # every delay equally strong
+
+# ---- Error bars: how much could a score wobble just by luck? (bootstrap) ----
+def bootstrap_db(guesses, truth, n_boot=1000, seed=0):
+    rng = np.random.default_rng(seed)
+    mistakes = np.sum(np.abs(guesses - truth) ** 2, axis=1)   # mistake size, channel by channel
+    sizes = np.sum(np.abs(truth) ** 2, axis=1)                # channel size, channel by channel
+    scores = []
+    for _ in range(n_boot):
+        pick = rng.integers(0, len(truth), len(truth))        # pull channels from a hat, with replacement
+        scores.append(10 * np.log10(mistakes[pick].sum() / sizes[pick].sum()))
+    return np.percentile(scores, [2.5, 97.5])                 # the middle 95% of the wobble
